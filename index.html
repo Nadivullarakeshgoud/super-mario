@@ -1,24 +1,24 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Mario Game</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            /* background-color: #87CEEB; */
-        }
-        canvas {
-            display: block;
-            /* background-color: #7ec850; */
-        }
-    </style>
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
     <script>
+        document.body.style.margin = '0';
+        document.body.style.overflow = 'hidden';
+
+        // Check if the page has already been reloaded
+        if (!localStorage.getItem('reloaded')) {
+            localStorage.setItem('reloaded', 'true');
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        }
+
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -121,6 +121,9 @@
                 ctx.font = '48px serif';
                 ctx.textAlign = 'center';
                 ctx.fillText('Game Over', canvas.width / 2, canvas.height / 2);
+                setTimeout(() => {
+                    location.reload(); // Reload the page after 2 seconds
+                }, 2000);
                 return;
             }
 
@@ -132,16 +135,16 @@
                 block.update();
                 if (detectCollision(player, block)) {
                     gameOver = true;
-                } else if (player.position.x > block.position.x + block.width && !block.passed) {
-                    score++; // Increment score when player passes a block
-                    block.passed = true; // Set passed property to true
+                } else if (!block.passed && block.position.x + block.width < player.position.x) {
+                    block.passed = true;
+                    score++; // Increment score when player successfully jumps over a block
                 }
             });
 
-            ctx.fillStyle = 'black'; // Set text color to black
-            ctx.font = '24px serif'; // Set font
-            ctx.textAlign = 'left'; // Set text alignment to left
-            ctx.fillText(`Score: ${score}`, 10, 20); // Draw score on the canvas
+            // Display score
+            ctx.fillStyle = 'black';
+            ctx.font = '24px serif';
+            ctx.fillText(`Score: ${score}`, 20, 30);
 
             if (keys['ArrowRight'] && player.position.x < canvas.width - player.width) {
                 player.velocity.x = player.speed;
@@ -176,3 +179,4 @@
     </script>
 </body>
 </html>
+
