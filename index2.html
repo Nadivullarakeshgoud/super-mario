@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Mario Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            /* background-color: #87CEEB; */
+        }
+        canvas {
+            display: block;
+            /* background-color: #7ec850; */
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const gravity = 0.5;
+        let isJumping = false;
+        let keys = {};
+        let gameOver = false;
+        let score = 0; // Add score variable
+
+        const backgroundImage = new Image();
+        backgroundImage.src = 'mario-background.jpg'; // Replace with your background image path
+
+        const playerImage = new Image();
+        playerImage.src = 'boss.jpg'; // Replace with your player image path
+
+        const blockImage = new Image();
+        blockImage.src = 'duck.png'; // Replace with your block image path
+
+        class Player {
+            constructor() {
+                this.width = 50;
+                this.height = 70;
+                this.position = {
+                    x: 100,
+                    y: canvas.height - this.height - 10
+                };
+                this.velocity = {
+                    x: 0,
+                    y: 1
+                };
+                this.speed = 5;
+            }
+
+            draw() {
+                ctx.drawImage(playerImage, this.position.x, this.position.y, this.width, this.height);
+            }
+
+            update() {
+                this.draw();
+                this.position.x += this.velocity.x;
+                this.position.y += this.velocity.y;
+
+                // Prevent player from falling through the ground
+                if (this.position.y + this.height + this.velocity.y <= canvas.height) {
+                    this.velocity.y += gravity;
+                } else {
+                    this.velocity.y = 0;
+                    isJumping = false;
+                }
+            }
+        }
+
+        class Block {
+            constructor() {
+                this.width = 50;
+                this.height = 50;
+                this.position = {
+                    x: canvas.width,
+                    y: canvas.height - this.height - 10
+                };
+                this.speed = Math.random() * 2 + 1; // Random speed between 1 and 3
+                this.passed = false; // Add passed property
+            }
+
+            draw() {
+                ctx.drawImage(blockImage, this.position.x, this.position.y, this.width, this.height);
+            }
+
+            update() {
+                this.draw();
+                this.position.x -= this.speed;
+
+                // Reset block position if it goes off screen
+                if (this.position.x + this.width < 0) {
+                    this.position.x = canvas.width;
+                    this.speed = Math.random() * 2 + 1; // Random speed between 1 and 3
+                    this.passed = false; // Reset passed property
+                }
+            }
+        }
+
+        const player = new Player();
+        const blocks = Array.from({ length: 4 }, () => new Block()); // Create 4 blocks
+
+        function detectCollision(player, block) {
+            return (
+                player.position.x < block.position.x + block.width &&
+                player.position.x + player.width > block.position.x &&
+                player.position.y < block.position.y + block.height &&
+                player.position.y + player.height > block.position.y
+            );
+        }
+
+        function animate() {
+            if (gameOver) {
+                ctx.fillStyle = 'red';
+                ctx.font = '48px serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Game Over', canvas.width / 2, canvas.height / 2);
+                return;
+            }
+
+            requestAnimationFrame(animate);
+            ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height); // Draw background image
+            player.update();
+
+            blocks.forEach(block => {
+                block.update();
+                if (detectCollision(player, block)) {
+                    gameOver = true;
+                } else if (player.position.x > block.position.x + block.width && !block.passed) {
+                    score++; // Increment score when player passes a block
+                    block.passed = true; // Set passed property to true
+                }
+            });
+
+            ctx.fillStyle = 'black'; // Set text color to black
+            ctx.font = '24px serif'; // Set font
+            ctx.textAlign = 'left'; // Set text alignment to left
+            ctx.fillText(`Score: ${score}`, 10, 20); // Draw score on the canvas
+
+            if (keys['ArrowRight'] && player.position.x < canvas.width - player.width) {
+                player.velocity.x = player.speed;
+            } else if (keys['ArrowLeft'] && player.position.x > 0) {
+                player.velocity.x = -player.speed;
+            } else {
+                player.velocity.x = 0;
+            }
+
+            if (keys['ArrowUp'] && !isJumping) {
+                player.velocity.y = -10;
+                isJumping = true;
+            }
+        }
+
+        window.addEventListener('keydown', ({ key }) => {
+            keys[key] = true;
+        });
+
+        window.addEventListener('keyup', ({ key }) => {
+            keys[key] = false;
+        });
+
+        // Ensure all images are loaded before starting the animation
+        backgroundImage.onload = () => {
+            playerImage.onload = () => {
+                blockImage.onload = () => {
+                    animate();
+                };
+            };
+        };
+    </script>
+</body>
+</html>
